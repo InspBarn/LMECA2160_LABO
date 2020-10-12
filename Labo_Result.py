@@ -3,8 +3,10 @@
 import csv
 import math as mt
 import numpy as np
+import pandas as pd
 
-import classCombustion as cbt
+import classCombustible as cbt
+import classMixedFuels as mxf
 
 with open('Labo_Result_2020_09_28_14_21.txt') as labo_result:
 	reader = csv.reader(labo_result)
@@ -26,8 +28,8 @@ results.columns = ['hours', 'minutes', 'seconds',
                    'F303Wa', 'F401Wa', 'P107Ap',
                    'CO', 'CO2', 'NO', 'O2', 'NO']
 
-fuel = {0: ('CH4',.827), 1: ('C2H6',.039), 2: ('C3H8',.012),
-        3: ('CO2',.014), 4: ('N2',.108)}
+fuel = {'CH4': .827, 'C2H6': .039, 'C3H8': .012,
+        'CO2': .014, 'N2': .108}
 
 def mixing(fuel, fct):
 	result = 0
