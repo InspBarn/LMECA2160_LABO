@@ -21,10 +21,10 @@ mélange de 'N' composants chimiques différents de fraction 'X' dont les param�
 	- AF_ratio : air to fuel ratio, float
 
 Le fuel defini par defaut est le methane (CH4) sans melange. Le ratio d'air au fuel est defini
-a la stoechimotrie.
+a la stoechiometrie.
 """
 class MixedFuels:
-	def __init__(self, fuel: dict, gas: dict, AF_ratio: float):
+	def __init__(self, fuel, gas: dict, AF_ratio: float):
 		fuelT, fraction = [],[]
 		for (fuel_type,fuel_fraction) in fuel.items():
 			fuel_decomposition = {'O':0,'H':0,'C':0}
@@ -39,25 +39,25 @@ class MixedFuels:
 				fuel_decomposition[chem] = comp
 
 			fuelT.append(cbt.Combustible(
-				x=fuel_decomposition{'O'},
-				y=fuel_decomposition{'H'},
-				z=fuel_decomposition{'C'}
+				x=fuel_decomposition['O'],
+				y=fuel_decomposition['H'],
+				z=fuel_decomposition['C']
 			))
 			fraction.append(fuel_fraction)
 
 		self.fuelT    = fuelT
-		self.fraction = np.array(fraction)
+		self.fraction = fraction
 
 		self.reactant = fuel
 		self.product  = gas
 
 		if 'N2' in self.fuel:
-			self.reactant['N2'] = self.fuel['N2'] + AF_ratio*(3.76*28)/(32+3.76*28)
+			self.reactant['N2'] = fuel['N2'] + AF_ratio*(3.76*28)/(32+3.76*28)
 		else:
 			self.reactant['N2'] = AF_ratio*(3.76*28)/(32+3.76*28)
 
 		if 'O2' in self.fuel:
-			self.reactant['O2'] = self.fuel['O2'] + AF_ratio*32/(32+3.76*28)
+			self.reactant['O2'] = fuel['O2'] + AF_ratio*32/(32+3.76*28)
 		else:
 			self.reactant['O2'] = AF_ratio*32/(32+3.76*28)
 
