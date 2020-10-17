@@ -75,7 +75,7 @@ class MixedFuels:
 		return self
 
 	"""
-	Return the fuel LHV
+	Return the fuel LHV [J/kg]
 	"""
 	def LHV(self):
 		result = 0.0
