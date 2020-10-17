@@ -6,6 +6,7 @@ import numpy as np
 MH = 1.007
 MC = 12.0107
 MO = 15.9994
+MN = 14.0067
 
 """
 Combustible est un objet représentant un combustible ainsi que sa combustion. Un combustible
@@ -78,7 +79,7 @@ class Combustible:
 	def AF_stoech(self):
 		if (self.x==self.y==self.z==0):
 			return 0
-		return (32.0 + 3.76*28) * (self.z + (self.y-2*self.x)/4) / (12*self.x + self.y + 16*self.x)
+		return (2*MO + 3.76*2*MN) * (self.z+(self.y-2*self.x)/4) / (self.z*MC + self.y*MH + self.x*MO)
 
 	"""
 	Return the volumetric air to fuel ratio of the combustible at stoechiometry
@@ -90,8 +91,10 @@ class Combustible:
 	Return the product to fuel ratio of the combustible at stoechimotry
 	"""
 	def PF_stoech(self):
-		#return (44*z + 9*y + 3.76*28*(z+(y-2*x)/4)) / (12*z + y + 16*x)
-		return self.AF_stoech() + 1
+		if (self.x==self.y==self.z==0):
+			return 0
+		return (self.z*(MC+2*MO) + self.y/2*(2*MH+MO) + 3.76*2*MN*(self.z+(self.y-2*self.x)/4)) / (self.z*MC + self.y*MH + self.x*MO)
+		#return self.AF_stoech() + 1
 
 	"""
 	Return the volumetric product to fuel ratio of the combustible at stoechiometry

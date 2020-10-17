@@ -37,6 +37,7 @@ class MixedFuels:
 							c = c*10 + int(ft[i])
 							i += 1
 						except:
+							c = 1 if c==0 else c
 							i = -1
 					fuel_decomposition[chem] = c
 
@@ -79,6 +80,14 @@ class MixedFuels:
 
 		self.excess_air_coefficient()
 
+	def get_xyz(self):
+		x,y,z = 0,0,0
+		for (ftype, ffraction) in zip(self.fuel_type, self.fuel_fraction):
+			x += ftype.x * ffraction
+			y += ftype.y * ffraction
+			z += ftype.z * ffraction
+		return (x,y,z)
+
 	"""
 	Return the mass density of the fuel [kg/m³]
 	"""
@@ -93,8 +102,8 @@ class MixedFuels:
 	"""
 	def LHV(self):
 		result = 0.0
-		for (index,fuel_type) in enumerate(self.fuel_type):
-			result += fuel_type.LHV() * self.fuel_fraction[index]
+		for (ftype, ffraction) in zip(self.fuel_type, self.fuel_fraction):
+			result += ftype.LHV() * ffraction
 		return result
 
 	"""
@@ -102,8 +111,8 @@ class MixedFuels:
 	"""
 	def AF_stoech(self):
 		result = 0.0
-		for (index,fuel_type) in enumerate(self.fuel_type):
-			result += fuel_type.AF_stoech() * self.fuel_fraction[index]
+		for (ftype, ffraction) in zip(self.fuel_type, self.fuel_fraction):
+			result += ftype.AF_stoech() * ffraction
 		return result
 
 	"""
