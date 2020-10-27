@@ -67,10 +67,10 @@ def select(structure):
 		                        & (structure[TGb] < Tmean*1.05)]
 	return structure_ret
 
-experience_20 = results[(results['air flowrate'] > 19.8) & (results['air flowrate'] < 20.2)
+exp_20 = results[(results['air flowrate'] > 19.8) & (results['air flowrate'] < 20.2)
                       & (results['CO'] != 0) & (results['CO2'] != 0) & (results['O2'] != 0)
                       & (results['O2'] != 0)]
-experience_20 = select(experience_20)
+exp_20 = select(exp_20)
 
 """
 experience_24 = results[(results['air flowrate'] > 19.8) & (results['air flowrate'] < 20.2)

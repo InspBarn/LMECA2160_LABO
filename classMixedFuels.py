@@ -50,12 +50,12 @@ class MixedFuels:
 
 		self.reactant = fuel
 
-		if kwargs.get("gas"):
-			self.product  = kwargs["gas"]
+		if 'gas' in kwargs:
+			self.product = kwargs["gas"]
 		else:
 			self.product = {}
 
-		if kwargs.get("AF_ratio"):
+		if 'AF_ratio' in kwargs:
 			self.AF_ratio = kwargs["AF_ratio"]
 		else:
 			self.AF_ratio = self.AF_stoech()
@@ -147,6 +147,9 @@ class MixedFuels:
 	"""
 	def excess_air_coefficient(self):
 		self.lambda0 = self.AF_ratio / self.AF_stoech()
+
+	def optimal_excess_air_coefficient(self):
+		pass
 
 	"""
 	Update the CO coefficient
