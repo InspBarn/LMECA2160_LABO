@@ -5,6 +5,12 @@ import numpy as np
 
 import classCombustible as cbt
 
+MH = 1.007
+MC = 12.0107
+MO = 15.9994
+MN = 14.0067
+rho_a = (.21e-3*MO*2 + .79e-3*MN*2) / (8.3144621*298.15/1.01325e5)
+
 """
 MixedFuels est un objet représentant un fuel le plus général possible consistant en un
 mélange de 'N' composants chimiques différents de fraction 'X' dont les paramètres sont :
@@ -28,7 +34,7 @@ class MixedFuels:
 		self.fuel_type = []
 		self.fuel_fraction = []
 		for (ft,ff) in fuel.items():
-			fuel_decomposition = {'O':0,'H':0,'C':0}
+			fuel_decomposition = {'N':0,'O':0,'H':0,'C':0}
 			for chem in fuel_decomposition.keys():
 				if chem in ft:
 					i,c = ft.index(chem) +1, 0
@@ -42,6 +48,7 @@ class MixedFuels:
 					fuel_decomposition[chem] = c
 
 			self.fuel_type.append(cbt.Combustible(
+				w=fuel_decomposition['N'],
 				x=fuel_decomposition['O'],
 				y=fuel_decomposition['H'],
 				z=fuel_decomposition['C']
@@ -57,6 +64,8 @@ class MixedFuels:
 
 		if 'AF_ratio' in kwargs:
 			self.AF_ratio = kwargs["AF_ratio"]
+		elif 'AFV_ratio' in kwargs:
+			self.AF_ratio = kwargs["AFV_ratio"]  * rho_a/self.rho()
 		else:
 			self.AF_ratio = self.AF_stoech()
 
@@ -83,22 +92,46 @@ class MixedFuels:
 	def get_xyz(self):
 		x,y,z = 0,0,0
 		for (ftype, ffraction) in zip(self.fuel_type, self.fuel_fraction):
+			w += ftype.w * ffraction
 			x += ftype.x * ffraction
 			y += ftype.y * ffraction
 			z += ftype.z * ffraction
-		return (x,y,z)
+		return (w,x,y,z)
+
+	# Return the molar mass in [kg/mol]
+	def molar_mass(self):
+		result = 0.0
+		for (ftype, ffraction) in zip(self.fuel_type, self.fuel_fraction):
+			result += ftype.molar_mass() * ffraction
+		return result
+
+	# Compute the mass fraction of fuel components and create a new attribute
+	def _cpt_Mfraction(self):
+		result = []
+		for (ftype, ffraction) in zip(self.fuel_type, self.fuel_fraction):
+			result.append(ffraction * ftype.molar_mass()/self.molar_mass())
+		self.fuel_fraction_m = result
+		return result
+
+	# Compute the volumetric fraction of fuel components and create a new attribute
+	def _cpt_Vfraction(self):
+		result = []
+		for (ftype, ffraction) in zip(self.fuel_type, self.fuel_fraction):
+			result.append(ffraction * ftype.molar_mass()/self.molar_mass() / (ftype.rho()/self.rho()))
+		self.fuel_fraction_v = result
+		return result
 
 	"""
 	Return the mass density of the fuel [kg/m³]
 	"""
 	def rho(self):
 		result = 0.0
-		for (index,fuel_type) in enumerate(self.fuel_type):
-			result += fuel_type.rho() * self.fuel_fraction[index]
+		for (ftype, ffraction) in zip(self.fuel_type, self.fuel_fraction):
+			result += ftype.rho() * ffraction
 		return result
 
 	"""
-	Return the fuel LHV [J/kg]
+	Return the fuel LHV [J/mol]
 	"""
 	def LHV(self):
 		result = 0.0
@@ -107,11 +140,19 @@ class MixedFuels:
 		return result
 
 	"""
+	Return the fuel LHV [J/kg]
+	"""
+	def LHV_m(self):
+		return self.LHV() / self.molar_mass()
+
+	"""
 	Return the air to fuel ratio at stoechiometry
 	"""
 	def AF_stoech(self):
+		if not hasattr(self, 'fuel_fraction_m'):
+			self._cpt_Mfraction()
 		result = 0.0
-		for (ftype, ffraction) in zip(self.fuel_type, self.fuel_fraction):
+		for (ftype, ffraction) in zip(self.fuel_type, self.fuel_fraction_m):
 			result += ftype.AF_stoech() * ffraction
 		return result
 
@@ -119,27 +160,33 @@ class MixedFuels:
 	Return the volumetric air to fuel ratio at stoechiometry
 	"""
 	def AFV_stoech(self):
+		if not hasattr(self, 'fuel_fraction_v'):
+			self._cpt_Vfraction()
 		result = 0.0
-		for (index,fuel_type) in enumerate(self.fuel_type):
-			result += fuel_type.AFV_stoech() * self.fuel_fraction[index]
+		for (ftype, ffraction) in zip(self.fuel_type, self.fuel_fraction_v):
+			result += ftype.AFV_stoech() * ffraction
 		return result
 
 	"""
 	Return the product to fuel ratio at stoechiometry
 	"""
 	def PF_stoech(self):
+		if not hasattr(self, 'fuel_fraction_m'):
+			self._cpt_Mfraction()
 		result = 0.0
-		for (index,fuel_type) in enumerate(self.fuel_type):
-			result += fuel_type.PF_stoech() * self.fuel_fraction[index]
+		for (ftype, ffraction) in zip(self.fuel_type, self.fuel_fraction_m):
+			result += ftype.PF_stoech() * ffraction
 		return result
 
 	"""
 	Return the volumetric product to fuel ratio at stoechiometry
 	"""
 	def PFV_stoech(self):
+		if not hasattr(self, 'fuel_fraction_v'):
+			self._cpt_Vfraction()
 		result = 0.0
-		for (index,fuel_type) in enumerate(self.fuel_type):
-			result += fuel_type.PFV_stoech() * self.fuel_fraction[index] 
+		for (ftype, ffraction) in zip(self.fuel_type, self.fuel_fraction_v):
+			result += ftype.PFV_stoech() * ffraction
 		return result
 
 	"""

@@ -8,11 +8,16 @@ MC = 12.0107
 MO = 15.9994
 MN = 14.0067
 
+hf_fuel = [x*1e3 for x in [-74.8, -84.7, -103.8, -126.2]] # [J/mol]
+hf_CO2  = -393.52e3
+hf_H20  = -241.8e3
+
 """
 Combustible est un objet représentant un combustible ainsi que sa combustion. Un combustible
 est defini par la formule :
                                           Cz Hy Ox
 Les paramètres sont :
+	- w : indice d'azote
 	- x : indice d'oxygene
 	- y : indice d'hydrogene
 	- z : indice de carbone
@@ -20,21 +25,22 @@ Les paramètres sont :
 Le méthane (CH4) est le combustible defini par defaut.
 """
 class Combustible:
-	def __init__(self, x: int=0, y: int=4, z: int=1):
+	def __init__(self, w: int=0, x: int=0, y: int=4, z: int=1):
+		self.w = w
 		self.x = x
 		self.y = y
 		self.z = z
 
 	# Return the molar mass in [kg/mol]
 	def molar_mass(self):
-		return (self.x*MO + self.y*MH + self.z*MC) * 1e-3
+		return (self.w*MN + self.x*MO + self.y*MH + self.z*MC) * 1e-3
 
 	# We assume we have a gas, here (clearly do not want to do more researches !)
 	def rho(self):
 		return self.molar_mass() / (8.3144621*298.15/1.01325e5)
 
 	"""
-	Return the Lower Heating Value (LHV) of the fuel [J/kg]
+	Return the Lower Heating Value (LHV) of the fuel [J/mol]
 	"""
 	def LHV(self):
 		if (self.x == self.y == self.z == 0) \
@@ -44,34 +50,13 @@ class Combustible:
 			return 0
 		elif (self.y==2) and (self.x==self.z==0):
 			# Gaseous Fuell // H2
-			return 241800 / self.molar_mass()
-		elif (self.z==1) and (self.y==4) and (self.x==0):
-			# Gaseous Fuel // CH4
-			return 802400 / self.molar_mass()
-		elif (self.z==3) and (self.y==8) and (self.x==0):
-			# Gaseous Fuel // C3H8
-			return 2044400 / self.molar_mass()
+			return 241800
 		elif (self.z==self.x==1) and (self.y==0):
 			# Gaseous Fuel // Carbon monoxyde
-			return 282400 / self.molar_mass()
-		elif (self.z == 2*self.y+2) and (self.x == 0):
-			# Liquid Fuel // Paraffin
-			return (612170*self.z - 207820) / self.molar_mass()
-		elif (self.z == 2*self.y) and (self.x == 0):
-			# Liquid Fuel // Naphtene
-			return 612170*self.z / self.molar_mass()
-		elif (self.z == 2*self.y-2) and (self.x == 0):
-			# Liquid Fuel // Diolefin
-			return (612170*self.z - 84184) / self.molar_mass()
-		elif (self.z == self.y == 6) and (self.x == 0):
-			# Liquid Fuel // Benzene
-			return 6 * 522200 / self.molar_mass()
-		elif self.x==0:
-			# Solid Fuel // Coke
-			return (393400 + 131760*self.y) / self.molar_mass()
+			return 282400
 		else:
-			# Solid Fuel // General CHyOx
-			return (393400 + 102550*self.y - (111000+102250*self.y)*self.x/(1+self.y/2.)) / self.molar_mass()
+			# Gaseous Fuel // Carbon oxydes CnHm
+			return hf_fuel[self.z-1] - self.z*hf_CO2 - self.y/2.*hf_H20
 
 	"""
 	Return the air to fuel ratio of the combustible at stoechiometry
@@ -85,6 +70,8 @@ class Combustible:
 	Return the volumetric air to fuel ratio of the combustible at stoechiometry
 	"""
 	def AFV_stoech(self):
+		if (self.x==self.y==self.z==0):
+			return 0
 		return 4.76 * (self.z + (self.y-2*self.x)/4)
 
 	"""
@@ -92,7 +79,7 @@ class Combustible:
 	"""
 	def PF_stoech(self):
 		if (self.x==self.y==self.z==0):
-			return 0
+			return 1
 		return (self.z*(MC+2*MO) + self.y/2*(2*MH+MO) + 3.76*2*MN*(self.z+(self.y-2*self.x)/4)) / (self.z*MC + self.y*MH + self.x*MO)
 		#return self.AF_stoech() + 1
 

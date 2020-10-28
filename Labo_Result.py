@@ -11,9 +11,6 @@ import numpy as np
 # Figure and Graphical representation
 from matplotlib import pyplot as plt
 
-import classCombustible as cbt
-import classMixedFuels as mxf
-
 """
 We first read the file in which results have been saved and save it into a pandas
 DataFrame structure.
@@ -38,12 +35,36 @@ results.columns = ['hours', 'minutes', 'seconds',
                    'F303Wa', 'F401Wa', 'P107Ap',
                    'CO', 'CO2', 'NO', 'O2', '??']
 
+# Gas Flowrate calibration
+results = results[(results['gas flowrate']>0.) & (results['gas flowrate']<5.)]
+results.index = range(len(results))
+gas_flow_rate = np.mean(results['gas flowrate'])
+
+# Time reset
+def reset_time(df):
+	df_copy = df.copy()
+	time_0 = (df['hours'][0], df['minutes'][0], df['seconds'][0])
+	df_copy['hours']   -= time_0[0]
+	df_copy['minutes'] -= time_0[1]
+	df_copy['seconds'] -= time_0[2]
+	return df_copy
+
+def get_flue_gasses(df,fg):
+	res = []
+	vec = df[fg]
+	for el in vec:
+		if (not el in res) and (el!=0):
+			res.append(el)
+	return res
 
 """
-Fuel composition as detailed in the .pdf file
-"""
-fuel = {'CH4': .827, 'C2H6': .039, 'C3H8': .012, 'CO2': .014, 'N2': .108}
+CO  = get_flue_gasses(results,'CO')
+CO2 = get_flue_gasses(results,'CO2')
+NO  = get_flue_gasses(results,'NO')
+O2  = get_flue_gasses(results,'O2')
 
+print((CO,CO2,NO,O2))
+"""
 
 """
 Decomposition of the three experimentations as detailed in the .pdf file.
@@ -59,19 +80,20 @@ and take the mean of the resulting vector for
 	- CO, CO2, NO and O2
 We are not interesting in the other datas for our combustion study.
 """
-def select(structure):
-	structure_ret = structure.copy()
+def _select_temperature(df):
+	df_copy = df.copy()
 	for TGb in ['T200Gb','T201Gb','T202Gb','T203Gb']:
-		Tmean = np.mean(structure[TGb])
-		structure_ret = structure[(structure[TGb] > Tmean*0.95)
-		                        & (structure[TGb] < Tmean*1.05)]
-	return structure_ret
+		Tmean = np.mean(df[TGb])
+		df_copy = df[(df[TGb] > Tmean*0.95)
+		             & (df[TGb] < Tmean*1.05)]
+	return df_copy
 
+"""
 exp_20 = results[(results['air flowrate'] > 19.8) & (results['air flowrate'] < 20.2)
                       & (results['CO'] != 0) & (results['CO2'] != 0) & (results['O2'] != 0)
                       & (results['O2'] != 0)]
 exp_20 = select(exp_20)
-
+"""
 """
 experience_24 = results[(results['air flowrate'] > 19.8) & (results['air flowrate'] < 20.2)
                       & (results['CO'] != experience_20['CO'][-1])
@@ -80,3 +102,19 @@ experience_24 = results[(results['air flowrate'] > 19.8) & (results['air flowrat
                       & (results['O2'] != experience_20['O2'][-1])]
 experience_24 = select(experience_24)
 """
+
+if __name__=="__main__":
+	time = results['hours']*3600 + results['minutes']*60 + results['seconds']
+	#time = time - time[0]
+
+	plt.plot(time,results['air flowrate'])
+
+	plt.figure()
+	plt.plot(time,results['T201Gb'])
+	plt.plot(time,results['T202Gb'])
+	plt.plot(time,results['T203Gb'])
+
+	plt.figure()
+	plt.plot(time,results['T203Gb'])
+	#plt.plot(range(len(omg)),omg['gas flowrate'])
+	plt.show()
