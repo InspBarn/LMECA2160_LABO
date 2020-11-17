@@ -14,7 +14,8 @@ except:
 
 from classCombustible import Combustible
 from classMixedFuels import MixedFuels
-from Labo_Result import gas_flow_rate
+
+gas_flow_rate = 20.
 
 
 nfig = 1
