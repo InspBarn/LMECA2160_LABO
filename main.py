@@ -6,11 +6,11 @@ import math as mt
 # Figures & plots
 from matplotlib import pyplot as plt
 try:
-	import seaborn as sns
-	use_seaborn = True
-	ss.set()
+    import seaborn as sns
+    use_seaborn = True
+    ss.set()
 except:
-	use_seaborn = False
+    use_seaborn = False
 
 from classCombustible import Combustible
 from classMixedFuels import MixedFuels
@@ -38,6 +38,7 @@ print("The product-to-fuel ratio at stoechiometry is PFst = %.2f [kg(gas)/kg(fue
 mxf.excess_air_coefficient()
 print("The excess-air coefficient λ : %.2f" %mxf.lambda0)
 
+"""
 fig = plt.figure(nfig)
 nfig += 1
 
@@ -54,4 +55,5 @@ plt.xlabel(r"$\left[O_2\right]'$")
 plt.ylabel(r"$\left[CO_2\right]'$")
 plt.title("Ostwald's diagram")
 plt.show()
+"""
 
