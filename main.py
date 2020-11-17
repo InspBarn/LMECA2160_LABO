@@ -14,7 +14,6 @@ except:
 
 from classCombustible import Combustible
 from classMixedFuels import MixedFuels
-from Labo_Result import gas_flow_rate
 
 
 nfig = 1
@@ -24,10 +23,10 @@ power = 17.5e3
 fuel  = {'CH4': .827, 'C2H6': .039, 'C3H8': .012, 'CO2': .014, 'N2': .108}
 
 # Fuel composition as detailed in the .pdf file
-mxf = MixedFuels(fuel=fuel, AFV_ratio=28./gas_flow_rate)
+mxf = MixedFuels(fuel=fuel, AFV_ratio=28./20.)
 
-print("Volumetric Gas flowrate assumption : %.2f [m³/h]" %gas_flow_rate)
-print("The volumetric air flowrate for a stoechiometric combustion : %.2f [m³/h]" %(mxf.AFV_stoech()*gas_flow_rate))
+print("Volumetric Gas flowrate assumption : %.2f [m³/h]" %20.)
+print("The volumetric air flowrate for a stoechiometric combustion : %.2f [m³/h]" %(mxf.AFV_stoech()*20.))
 print("The Lower Heating Value (LHV) of the fuel : %.2f [MJ/m³]\n" % (mxf.LHV_m()*mxf.rho()*1E-6))
 #print("The Lower Heating Value (LHV) of the fuel : %.2f [MJ/kg]\n" % (mxf.LHV_m()*1E-6))
 
