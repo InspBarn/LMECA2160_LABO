@@ -2,6 +2,7 @@
 
 import math as mt
 import numpy as np
+import thermo as th
 
 import classCombustible as cbt
 
@@ -90,7 +91,7 @@ class MixedFuels:
         self.excess_air_coefficient()
 
     def get_xyz(self):
-        x,y,z = 0,0,0
+        w,x,y,z = 0,0,0,0
         for (ftype, ffraction) in zip(self.fuel_type, self.fuel_fraction):
             w += ftype.w * ffraction
             x += ftype.x * ffraction
@@ -194,6 +195,7 @@ class MixedFuels:
     """
     def excess_air_coefficient(self):
         self.lambda0 = self.AF_ratio / self.AF_stoech()
+        return self.lambda0
 
     def optimal_excess_air_coefficient(self):
         pass
@@ -213,3 +215,70 @@ class MixedFuels:
         except ValueError:
             self.excess_air_coefficient()
             return self.lambda0**(-1)
+
+    """
+    Return the flue gases composition, with coefficients in stoechiometry with x, y, z
+    """
+    def flue_gas_comp_total(self, ε=0):
+        λ = self.lambda0
+        w,x,y,z = self.get_xyz()
+        if λ*(1+ε) < 1:     # Case 1
+            k = 2*(1-λ)*(4*z+y-2*x)/(4*z+y)
+        elif 1 < λ*(1-ε):   # Case 2
+            k = 0
+        else:               # Case 3
+            k = ((1-λ*(1-ε))^2)/(2*ε*λ) * (4*z+y-2*x)/(4*z+y)
+
+        return {'CO2':  (1-k)*z,
+                'CO':   k*z,
+                'H2':   k*y/4,
+                'H2O':  (1-k/2)*y/2,
+                'O2':   (λ-1)*(z+(y-2*x)/4) + k/2*(z+y/4),
+                'N2':   3.76*λ*(z+(y-2*x)/4)}
+
+    """
+    Return the flue gases composition (sum = 1)
+    """
+    def flue_gas_comp(self, ε=0, dry=False):
+        fgct = self.flue_gas_comp_total(ε)
+        total = sum(fgct.values())
+        if dry:
+            total -= fgct['H2O']
+        fgc = {}
+        for (comp, val) in fgct.items():
+            if not(dry & (comp=='H2O')):
+                fgc[comp] = val/total
+        return fgc
+
+    """
+    Return the adiabatic temperature of the combustion
+    """
+    def T_ad(self, T_in=300):
+        LHV = self.LHV()
+        T_s = 298.15
+
+        sum_reac = 0
+        for (comp, val ) in self.reactant.items():
+            chem = th.Chemical(comp)
+            sum_reac += val*chem.HeatCapacityGas.T_dependent_property_integral(T_in, T_s)
+
+        it = 0
+        T_ad = 500
+        T_ad_p = 0
+        while abs(T_ad-T_ad_p) > 1e-2:
+            T_ad_p = T_ad
+
+            sum_prod = 0
+            for (comp, val) in self.flue_gas_comp().items():
+                chem = th.Chemical(comp)
+                sum_prod += val*chem.HeatCapacityGas.T_dependent_property_integral(T_ad, T_s)
+
+            T_ad = T_s + (LHV + (T_in - T_s)*sum_reac)/sum_prod
+
+            print(T_ad) # remove when working
+            it+=1
+            if it > 1e2:
+                print("Too much iteration: exiting with T_ad = %.2f" %T_ad)
+                break
+
+        return T_ad

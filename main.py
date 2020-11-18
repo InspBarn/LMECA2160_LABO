@@ -2,6 +2,7 @@
 
 # Mathematic Developments
 import math as mt
+import numpy as np
 
 # Figures & plots
 from matplotlib import pyplot as plt
@@ -14,8 +15,8 @@ except:
 
 from classCombustible import Combustible
 from classMixedFuels import MixedFuels
-
-gas_flow_rate = 20.
+from LabResults import gas_flow_rate, air_flow_rates
+#gas_flow_rate = 20.
 
 
 nfig = 1
@@ -27,16 +28,28 @@ fuel  = {'CH4': .827, 'C2H6': .039, 'C3H8': .012, 'CO2': .014, 'N2': .108}
 # Fuel composition as detailed in the .pdf file
 mxf = MixedFuels(fuel=fuel, AFV_ratio=28./gas_flow_rate)
 
-print("Volumetric Gas flowrate assumption : %.2f [m³/h]" %gas_flow_rate)
-print("The volumetric air flowrate for a stoechiometric combustion : %.2f [m³/h]" %(mxf.AFV_stoech()*gas_flow_rate))
-print("The Lower Heating Value (LHV) of the fuel : %.2f [MJ/m³]\n" % (mxf.LHV_m()*mxf.rho()*1E-6))
-#print("The Lower Heating Value (LHV) of the fuel : %.2f [MJ/kg]\n" % (mxf.LHV_m()*1E-6))
+print("Volumetric Gas flowrate assumption: %.2f [m³/h]" %gas_flow_rate)
+print("The volumetric air flowrate for a stoechiometric combustion: %.2f [m³/h]" %(mxf.AFV_stoech()*gas_flow_rate))
+print("=========== 1 ===========") 
+print("\t1. The Lower Heating Value (LHV) of the fuel: %.2f [MJ/m³]\n" % (mxf.LHV_m()*mxf.rho()*1E-6))
+#print("The Lower Heating Value (LHV) of the fuel: %.2f [MJ/kg]\n" % (mxf.LHV_m()*1E-6))
 
-print("The air-to-fuel ratio at stoechiometry is AFst = %.2f [kg(air)/kg(fuel)]" % mxf.AF_stoech())
-print("The product-to-fuel ratio at stoechiometry is PFst = %.2f [kg(gas)/kg(fuel)]\n" % mxf.PF_stoech())
+print("\t2. The air-to-fuel ratio at stoechiometry is AFst = %.2f [kg(air)/kg(fuel)]" % mxf.AF_stoech())
+print("\t   The product-to-fuel ratio at stoechiometry is PFst = %.2f [kg(gas)/kg(fuel)]\n" % mxf.PF_stoech())
 
-mxf.excess_air_coefficient()
-print("The excess-air coefficient λ : %.2f" %mxf.lambda0)
+print("=========== 2 ===========") 
+for afr in air_flow_rates:
+    # Re-set fuel compositon to re-create new mxf with new afr
+    fuel  = {'CH4': .827, 'C2H6': .039, 'C3H8': .012, 'CO2': .014, 'N2': .108}
+    mxf = MixedFuels(fuel=fuel, AFV_ratio=afr/gas_flow_rate)
+
+    print("\tAir flowrate = %.2f" % afr)
+    print("\t\t1. The excess-air coefficient λ: %.2f" %mxf.excess_air_coefficient())
+    print("\t\t2. The flue gas compsition (dry basis):")
+    for (comp, val) in mxf.flue_gas_comp(ε=0, dry=True).items():
+        print("\t\t\t%s:\t%.2f %%" %(comp, val*100))
+print("\t\t3. Adiabatic combustion temperature: T_ad = %.2f" %mxf.T_ad())
+# ↑ to place in the loop when working
 
 """
 fig = plt.figure(nfig)
