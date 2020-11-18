@@ -15,7 +15,7 @@ except:
 
 from classCombustible import Combustible
 from classMixedFuels import MixedFuels
-from LabResults import gas_flow_rate, air_flow_rates
+from LabResults import gas_flow_rate, air_flow_rates, T_room
 #gas_flow_rate = 20.
 
 
@@ -48,7 +48,7 @@ for afr in air_flow_rates:
     print("\t\t2. The flue gas compsition (dry basis):")
     for (comp, val) in mxf.flue_gas_comp(ε=0, dry=True).items():
         print("\t\t\t%s:\t%.2f %%" %(comp, val*100))
-print("\t\t3. Adiabatic combustion temperature: T_ad = %.2f" %mxf.T_ad())
+print("\t\t3. Adiabatic combustion temperature: T_ad = %.2f" %mxf.T_ad(T_in=T_room))
 # ↑ to place in the loop when working
 
 """

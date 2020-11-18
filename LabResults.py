@@ -43,6 +43,8 @@ for i in range(len(debits)):
     plt.plot(time,results['T202Gb'])
     plt.plot(time,results['T203Gb'])
 
+T_room = results['atm temperature'][0]+273.15
+
 plt.show()
 gas_flow_rate = np.mean(gas_flow_rate)
 #print(gas_flow_rate)
