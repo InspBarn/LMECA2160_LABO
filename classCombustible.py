@@ -3,14 +3,13 @@
 import math as mt
 import numpy as np
 
-MH = 1.007
-MC = 12.0107
-MO = 15.9994
-MN = 14.0067
+from thermo import Chemical
 
-hf_fuel = [x*1e3 for x in [-74.8, -84.7, -103.8, -126.2]] # [J/mol]
-hf_CO2  = -393.52e3
-hf_H20  = -241.8e3
+H2  = Chemical('H2')
+O2  = Chemical('O2')
+N2  = Chemical('N2')
+CO2 = Chemical('CO2')
+H2O = Chemical('H2O')
 
 """
 Combustible est un objet représentant un combustible ainsi que sa combustion. Un combustible
@@ -25,23 +24,42 @@ Les paramètres sont :
 Le méthane (CH4) est le combustible defini par defaut.
 """
 class Combustible:
-    def __init__(self, w: int=0, x: int=0, y: int=4, z: int=1):
-        self.w = w
-        self.x = x
-        self.y = y
-        self.z = z
+    def __init__(self,fuel='CH4', Ts=298.15, Ps=1.0325e5):
+        self.chem = Chemical(fuel,Ts,Ps)
+        dctn = self.chem.atoms
+        self.w = dctn['N'] if 'N' in dctn else 0
+        self.x = dctn['O'] if 'O' in dctn else 0
+        self.y = dctn['H'] if 'H' in dctn else 0
+        self.z = dctn['C'] if 'C' in dctn else 0
 
-    # Return the molar mass in [kg/mol]
-    def molar_mass(self):
-        return (self.w*MN + self.x*MO + self.y*MH + self.z*MC) * 1e-3
+    # Return the molar mass in [g/mol]
+    @property
+    def MW(self):
+        return self.chem.MW
+
+    # Return the molar mass in [g/mol]
+    @property
+    def formula(self):
+        return self.chem.formula
+
+    @property
+    def atoms(self):
+        return self.chem.atoms
 
     # We assume we have a gas, here (clearly do not want to do more researches !)
+    # Return the mass density in [kg/m^3]
+    @property
     def rho(self):
-        return self.molar_mass() / (8.3144621*298.15/1.01325e5)
+        return self.chem.rhog
+        # return self.molar_mass / (8.3144621*298.15/1.01325e5)
 
-    """
-    Return the Lower Heating Value (LHV) of the fuel [J/mol]
-    """
+    # Return the molar density [mol/m^3]
+    @property
+    def rhom(self):
+        return self.chem.rhogm
+
+    # Return the Lower Heating Value (LHV) of the fuel [J/mol]
+    @property
     def LHV(self):
         if (self.x == self.y == self.z == 0) \
             or (self.z==1 and self.y==0 and self.x==2) \
@@ -49,43 +67,39 @@ class Combustible:
             # No Fuel or CO2 or H2O
             return 0
         elif (self.y==2) and (self.x==self.z==0):
-        	# Gaseous Fuell // H2
+        	# Gaseous Fuel // H2
             return 241800
         elif (self.z==self.x==1) and (self.y==0):
         	# Gaseous Fuel // Carbon monoxyde
             return 282400
         else:
             # Gaseous Fuel // Carbon oxydes CnHm
-            return hf_fuel[self.z-1] - self.z*hf_CO2 - self.y/2.*hf_H20
+            return self.chem.Hf - self.z*CO2.Hf - self.y/2*H2O.Hf
 
-    """
-    Return the air to fuel ratio of the combustible at stoechiometry
-    """
+    # Return the air to fuel ratio of the combustible at stoechiometry
+    @property
     def AF_stoech(self):
         if (self.x==self.y==self.z==0):
             return 0
-        return (2*MO + 3.76*2*MN) * (self.z+(self.y-2*self.x)/4) / (self.z*MC + self.y*MH + self.x*MO)
+        return (O2.MW + 3.76*N2.MW) * (self.z+(self.y-2*self.x)/4) / self.MW
 
-    """
-    Return the volumetric air to fuel ratio of the combustible at stoechiometry
-    """
+    # Return the volumetric air to fuel ratio of the combustible at stoechiometry
+    @property
     def AFV_stoech(self):
         if (self.x==self.y==self.z==0):
             return 0
         return 4.76 * (self.z + (self.y-2*self.x)/4)
 
-    """
-    Return the product to fuel ratio of the combustible at stoechimotry
-    """
+    # Return the product to fuel ratio of the combustible at stoechimotry
+    @property
     def PF_stoech(self):
         if (self.x==self.y==self.z==0):
             return 1
-        return (self.z*(MC+2*MO) + self.y/2*(2*MH+MO) + 3.76*2*MN*(self.z+(self.y-2*self.x)/4)) / (self.z*MC + self.y*MH + self.x*MO)
+        return (self.z*CO2.MW + self.y/2*H2O.MW + 3.76*N2.MW*(self.z+(self.y-2*self.x)/4)) / self.MW
     	#return self.AF_stoech() + 1
 
-    """
-    Return the volumetric product to fuel ratio of the combustible at stoechiometry
-    """
+    # Return the volumetric product to fuel ratio of the combustible at stoechiometry
+    @property
     def PFV_stoech(self):
         return self.z + self.y/2 + 3.76*(self.z + (self.y-2*self.x)/4)
 

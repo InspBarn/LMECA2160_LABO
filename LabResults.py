@@ -45,7 +45,9 @@ for i in range(len(debits)):
 
 T_room = results['atm temperature'][0]+273.15
 
-plt.show()
 gas_flow_rate = np.mean(gas_flow_rate)
 #print(gas_flow_rate)
 #print(air_flow_rates)
+
+if __name__=="__main__":
+  plt.show()
