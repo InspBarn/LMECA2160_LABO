@@ -48,6 +48,7 @@ class MixedFuels:
             self.fuel_type.append(Combustible(ft,Ts,Ps))
             self.fuel_frac.append(ff)
         self.fuel_frac = np.array(self.fuel_frac)
+        self.fuel_frac /= self.fuel_frac.sum()
 
         ##
         if 'AF_ratio' in kwargs:
@@ -55,7 +56,7 @@ class MixedFuels:
         elif 'AFV_ratio' in kwargs:
             self.AF_ratio = kwargs["AFV_ratio"]  * rho_a/self.rho
         else:
-            self.AF_ratio = self.AF_stoech()
+            self.AF_ratio = self.AF_stoech
 
         ## Reactants Decomposition
         self.rct_id = {ft:i for (i,ft) in enumerate(fuel)}
@@ -79,24 +80,12 @@ class MixedFuels:
             else:
                 self.rct_frac[i] = fuel[rid]
 
+        ## Products Creation
         self.pdt_id = {'CO2':0, 'CO':1, 'H2':2, 'H2O':3, 'O2':4, 'N2':5}
         self.pdt_n  = len(self.pdt_id)
         self.pdt_chem = [Chemical(pid,Ts,Ps) for pid in self.pdt_id.keys()]
         self.pdt_frac = np.zeros(self.pdt_n)
         self._update_products()
-
-
-        """
-        self.reactant = {'fuel': {ft:ff for (ft,ff) in zip(self.fuel_type,self.fuel_fraction)},
-                         'air': {Chemical('O2'): self.AF_ratio*(2*MN)/(2*MN+7.52*MO),
-                                 Chemical('N2'): self.AF_ratio*(7.52*MO)/(2*MN+7.52*MO)
-                        }}
-
-        if 'gas' in kwargs:
-            self.product = kwargs["gas"]
-        else:
-            self.product = {}
-        """
 
         """
         glob = sum(self.reactant.values())
@@ -236,18 +225,13 @@ class MixedFuels:
     def _update_AFV_ratio(self, AFV_ratio):
         self.AF_ratio = AFV_ratio * rho_a/self.rho
 
-        self.rct_frac = np.empty(self.rct_n)
-        for rid,i in self.rct_id.items():
-            if rid=='O2':
-                self.rct_frac[i] = self.AF_ratio*O2.MW/(O2.MW+3.76*N2.MW)
-                if 'O2' in self.fuel_id:
-                    self.rct_frac[i] += self.fuel_frac[self.fuel_id['O2']]
-            elif rid=='N2':
-                self.rct_frac[i] = self.AF_ratio*(3.76*N2.MW)/(O2.MW+3.76*N2.MW)
-                if 'N2' in self.fuel_id:
-                    self.rct_frac[i] += self.fuel_frac[self.fuel_id['N2']]
-            else:
-                self.rct_frac[i] = self.fuel_frac[self.fuel_id[rid]]
+        self.rct_frac[self.rct_id['O2']] = self.AF_ratio*O2.MW/(O2.MW+3.76*N2.MW)
+        if 'O2' in self.fuel_id:
+            self.rct_frac[self.rct_id['O2']] += self.fuel_frac[self.fuel_id['O2']]
+
+        self.rct_frac[self.rct_id['N2']] = self.AF_ratio*(3.76*N2.MW)/(O2.MW+3.76*N2.MW)
+        if 'N2' in self.fuel_id:
+            self.rct_frac[self.rct_id['N2']] += self.fuel_frac[self.fuel_id['N2']]
 
         self._update_products()
 
@@ -291,13 +275,15 @@ class MixedFuels:
         self._update_products()
 
         HCGr = self.rct_frac @ np.array(
-            [chem.HeatCapacityGas.T_dependent_property_integral(T_in, self.Ts)
+            [chem.HeatCapacityGas.T_dependent_property_integral(self.Ts, T_in)
             for chem in self.rct_chem])
+
         HCGp = lambda Tad: self.pdt_frac @ np.array(
             [chem.HeatCapacityGas.T_dependent_property_integral(self.Ts, Tad)
             for chem in self.pdt_chem])
-        func = lambda Tad: (Tad-self.Ts)*HCGp(Tad) - (self.LHV + (self.Ts-T_in)*HCGr)
-        T_ad = fsolve(func, 500)[0]
+
+        func = lambda Tad: (Tad-self.Ts)*HCGp(Tad) - (self.LHV + (T_in-self.Ts)*HCGr)
+        T_ad = fsolve(func, 1000)[0]
 
         """
         sum_reac = 0

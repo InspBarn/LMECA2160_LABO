@@ -11,23 +11,30 @@ import numpy as np
 # Figure and Graphical representation
 from matplotlib import pyplot as plt
 
+columns = ['hours', 'minutes', 'seconds',
+           'atm pressure', 'atm temperature', 'atm humidity',
+           'T108AP', 'T200Gb', 'T201Gb', 'T202Gb', 'T203Gb',
+           'T300Wa', 'T304Wa', 'T400Wa', 'T405Wa', 'T406Wa',
+           'air flowrate', 'gas flowrate',
+           'F303Wa', 'F401Wa', 'P107Ap',
+           'CO', 'CO2', 'NO', 'O2', '??']
+debits = [20, 24, 28]
+
 """
 We first read the file in which results have been saved and save it into a pandas
 DataFrame structure.
 """
-debits = [20, 24, 28]
 stable_air_time_limits = [57836, 56950, 57340]
+"""
+stable_air_time_limits = [[57880, 58000],
+                          [55700, 56200],
+                          [57300, 57470]]
+"""
 air_flow_rates = []
 gas_flow_rate = []
 for i in range(len(debits)):
     results = pd.read_csv('results/debit'+str(debits[i])+'.txt',sep='\t')
-    results.columns = ['hours', 'minutes', 'seconds',
-                       'atm pressure', 'atm temperature', 'atm humidity',
-                       'T108AP', 'T200Gb', 'T201Gb', 'T202Gb', 'T203Gb',
-                       'T300Wa', 'T304Wa', 'T400Wa', 'T405Wa', 'T406Wa',
-                       'air flowrate', 'gas flowrate',
-                       'F303Wa', 'F401Wa', 'P107Ap',
-                       'CO', 'CO2', 'NO', 'O2', '??']
+    results.columns = columns
 
     results = results[(results['gas flowrate']>0.) & (results['gas flowrate']<5.)]
     results.index = range(len(results))

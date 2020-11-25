@@ -28,7 +28,7 @@ power = 17.5e3
 fuel  = {'CH4': .827, 'C2H6': .039, 'C3H8': .012, 'CO2': .014, 'N2': .108}
 
 # Fuel composition as detailed in the .pdf file
-mxf = MixedFuels(fuel=fuel, AFV_ratio=20./gas_flow_rate)
+mxf = MixedFuels(fuel=fuel, Ts=298.15, Ps=1.01325e5) #, AFV_ratio=20./gas_flow_rate)
 
 print("Volumetric Gas flowrate assumption: %.2f [m³/h]" %gas_flow_rate)
 print("The volumetric air flowrate for a stoechiometric combustion: %.2f [m³/h]" %(mxf.AFV_stoech*gas_flow_rate))
