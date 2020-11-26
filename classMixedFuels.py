@@ -68,14 +68,15 @@ class MixedFuels:
             self.rct_id['O2'] = self.rct_n
             self.rct_n += 1
 
+        w,x,y,z = self.get_wxyz()
         self.rct_chem = [Chemical(rid,Ts,Ps) for rid in self.rct_id.keys()]
         self.rct_frac = np.zeros(self.rct_n)
         for rid,i in self.rct_id.items():
             if rid=='O2':
-                self.rct_frac[i] = self.AF_ratio*O2.MW/(O2.MW+3.76*N2.MW)
+                self.rct_frac[i] = self.λ*(z+(y-2*x)/4)
                 if 'O2' in fuel: self.rct_frac[i] += fuel['O2']
             elif rid=='N2':
-                self.rct_frac[i] = self.AF_ratio*(3.76*N2.MW)/(O2.MW+3.76*N2.MW)
+                self.rct_frac[i] = 3.76*self.λ*(z+(y-2*x)/4)
                 if 'N2' in fuel: self.rct_frac[i] += fuel['N2']
             else:
                 self.rct_frac[i] = fuel[rid]
@@ -224,12 +225,15 @@ class MixedFuels:
     # 
     def _update_AFV_ratio(self, AFV_ratio):
         self.AF_ratio = AFV_ratio * rho_a/self.rho
+        w,x,y,z = self.get_wxyz()
 
-        self.rct_frac[self.rct_id['O2']] = self.AF_ratio*O2.MW/(O2.MW+3.76*N2.MW)
+        #self.rct_frac[self.rct_id['O2']] = self.AF_ratio*O2.MW/(O2.MW+3.76*N2.MW)
+        self.rct_frac[self.rct_id['O2']] = self.λ*(z+(y-2*x)/4)
         if 'O2' in self.fuel_id:
             self.rct_frac[self.rct_id['O2']] += self.fuel_frac[self.fuel_id['O2']]
 
-        self.rct_frac[self.rct_id['N2']] = self.AF_ratio*(3.76*N2.MW)/(O2.MW+3.76*N2.MW)
+        #self.rct_frac[self.rct_id['N2']] = self.AF_ratio*(3.76*N2.MW)/(O2.MW+3.76*N2.MW)
+        self.rct_frac[self.rct_id['N2']] = 3.76*self.λ*(z+(y-2*x)/4)
         if 'N2' in self.fuel_id:
             self.rct_frac[self.rct_id['N2']] += self.fuel_frac[self.fuel_id['N2']]
 
@@ -252,7 +256,7 @@ class MixedFuels:
         self.pdt_frac[self.pdt_id['H2']]  = k*y/4
         self.pdt_frac[self.pdt_id['H2O']] = (1-k/2)*y/2
         self.pdt_frac[self.pdt_id['O2']]  = (self.λ-1)*(z+(y-2*x)/4) + k/2*(z+y/4)
-        self.pdt_frac[self.pdt_id['N2']]  = 3.76*self.λ*(z+(y-2*x)/4)
+        self.pdt_frac[self.pdt_id['N2']]  = 3.76*self.λ*(z+(y-2*x)/4) + w/2
 
     """
     Return the flue gases composition (sum = 1)
@@ -274,12 +278,13 @@ class MixedFuels:
     def T_ad(self, T_in=300):
         self._update_products()
 
+        #"""
         HCGr = self.rct_frac @ np.array(
-            [chem.HeatCapacityGas.T_dependent_property_integral(self.Ts, T_in)
+            [chem.HeatCapacityGas.T_dependent_property_integral(self.Ts, T_in)/(T_in-self.Ts)
             for chem in self.rct_chem])
 
         HCGp = lambda Tad: self.pdt_frac @ np.array(
-            [chem.HeatCapacityGas.T_dependent_property_integral(self.Ts, Tad)
+            [chem.HeatCapacityGas.T_dependent_property_integral(self.Ts, Tad)/(Tad-self.Ts)
             for chem in self.pdt_chem])
 
         func = lambda Tad: (Tad-self.Ts)*HCGp(Tad) - (self.LHV + (T_in-self.Ts)*HCGr)
@@ -288,26 +293,26 @@ class MixedFuels:
         """
         sum_reac = 0
         for (frac,chem) in zip(self.rct_frac,self.rct_chem):
-            sum_reac += frac * chem.HeatCapacityGas.T_dependent_property_integral(T_in, self.Ts)
+            sum_reac += frac * chem.HeatCapacityGas.T_dependent_property_integral(self.Ts, T_in)/(T_in-self.Ts)
 
         n,nmax = 0,100
         T_ad = 500
         T_ad_p = 0
-        breakpoint()
+        #breakpoint()
         while (mt.fabs(T_ad-T_ad_p)>1e-2) and (n<nmax):
             T_ad_p = T_ad
 
             sum_prod = 0
             for (frac,chem) in zip(self.rct_frac,self.rct_chem):
-                sum_prod += frac * chem.HeatCapacityGas.T_dependent_property_integral(self.Ts, T_ad)
+                sum_prod += frac * chem.HeatCapacityGas.T_dependent_property_integral(self.Ts, T_ad)/(T_ad-self.Ts)
 
-            T_ad = self.Ts + (self.LHV + (self.Ts-T_in)*sum_reac)/sum_prod
+            T_ad = self.Ts + (self.LHV + (T_in-self.Ts)*sum_reac)/sum_prod
             n += 1
 
-            print(T_ad) # remove when working
+            #print(T_ad) # remove when working
 
         if n==nmax:
             print("Too much iteration: exiting with T_ad = %.2f" %T_ad)
-        """
+        #"""
 
         return T_ad

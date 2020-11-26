@@ -54,7 +54,9 @@ for afr in air_flow_rates:
     for (comp, val) in mxf.flue_gas_comp(ε=0, dry=True).items():
         print("      %s:  %.2f %%" %(comp, val*100))
     print("    3. Adiabatic combustion temperature: T_ad = %.2f" %mxf.T_ad(T_in=T_room))
-# ↑ to place in the loop when working
+
+    #[print("%s:\t%.4f\n" % (chem.formula, frac)) for (chem, frac) in zip(mxf.rct_chem,mxf.rct_frac)]
+    #[print("%s:\t%.4f\n" % (chem.formula, frac)) for (chem, frac) in zip(mxf.pdt_chem,mxf.pdt_frac)]
 
 """
 fig = plt.figure(nfig)
