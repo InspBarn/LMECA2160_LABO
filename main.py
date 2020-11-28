@@ -15,7 +15,7 @@ except:
 
 from classCombustible import Combustible
 from classMixedFuels import MixedFuels
-from LabResults import gas_flow_rate, air_flow_rates, T_room
+from LabResults_donatien import gas_flow_rate, air_flow_rates, T_room, gas_comp as real_gc
 #gas_flow_rate = 20.
 
 
@@ -41,7 +41,8 @@ print("     The product-to-fuel ratio at stoechiometry is PFst = %.2f [kg(gas)/k
 
 print("=========== 2 ===========") 
 print(mxf.pdt_id)
-for afr in air_flow_rates:
+for i in range(3):
+    afr = air_flow_rates[i]
     # Re-set fuel compositon to re-create new mxf with new afr
     # fuel  = {'CH4': .827, 'C2H6': .039, 'C3H8': .012, 'CO2': .014, 'N2': .108}
     # mxf = MixedFuels(fuel=fuel, AFV_ratio=afr/gas_flow_rate)
@@ -51,8 +52,14 @@ for afr in air_flow_rates:
     print("  Air flowrate = %.2f" % afr)
     print("    1. The excess-air coefficient λ: %.2f" %mxf.λ)
     print("    2. The flue gas compsition (dry basis):")
+    print("      \t\ttheorical \treal")
     for (comp, val) in mxf.flue_gas_comp(ε=0, dry=True).items():
-        print("      %s:  %.2f %%" %(comp, val*100))
+        if (comp == 'CO'):
+            print("      %s:\t%d ppm\t\t%d ppm" %(comp, val*1e6, real_gc[i][comp]))
+        elif comp in ['CO2', 'O2']:
+            print("      %s:\t%.2f %%\t\t%.2f %%" %(comp, val*100, real_gc[i][comp]))
+        else:
+            print("      %s:\t%.2f %%" %(comp, val*100))
     print("    3. Adiabatic combustion temperature: T_ad = %.2f" %mxf.T_ad(T_in=T_room))
 
     #[print("%s:\t%.4f\n" % (chem.formula, frac)) for (chem, frac) in zip(mxf.rct_chem,mxf.rct_frac)]
