@@ -18,7 +18,7 @@ from classMixedFuelTheoretical import MixedFuelTheoretical
 from classMixedFuelExperiment import MixedFuelExperiment
 
 from LabResults_donatien import gas_flow_rates, air_flow_rates, T_room, gas_comp as real_gc
-gas_flow_rate = gas_flow_rates[0].
+gas_flow_rate = gas_flow_rates[0]
 
 
 nfig = 1
@@ -59,7 +59,7 @@ for (i,afr) in enumerate(air_flow_rates):
     print("    2. The flue gas compsition (dry basis):")
     print("       \t\ttheorical \treal")
     for (comp, val) in mxfe.flue_gas_comp(dry=True).items():
-        if (comp == 'CO'):
+        if comp in ['CO', 'NO']:
             print("       %s:\t%d ppm   \t%d ppm" %(comp, val*1e6, real_gc[i][comp]))
         elif comp in ['CO2', 'O2']:
             print("       %s:\t%.2f %%\t\t%.2f %%" %(comp, val*100, real_gc[i][comp]))
