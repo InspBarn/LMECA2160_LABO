@@ -52,7 +52,7 @@ for (i,afr) in enumerate(air_flow_rates):
     AFV_ratio = afr/gas_flow_rate
 
     mxf._update_AFV_ratio(AFV_ratio,ε=5e-2)
-    mxfe = MixedFuelExperiment(real_gc[i], fuel,Ts,Ps,AFV_ratio=AFV_ratio)
+    mxfe = MixedFuelExperiment(real_gc[i], fuel,Ts,Ps, AFV_ratio=AFV_ratio)
 
     print("  Air flowrate = %.2f" % afr)
     print("    1. The excess-air coefficient λ: %.2f" %mxf.λ)
