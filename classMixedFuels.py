@@ -242,8 +242,8 @@ class MixedFuels:
 
     # Return the flue gases composition, with coefficients in stoechiometry with x, y, z
     def _update_products(self,ε=0):
-        λ = self.λ
         w,x,y,z = self.get_wxyz()
+
         if self.λ*(1+ε) < 1:     # Case 1 : Rich
             k = 2*(1-self.λ)*(4*z+y-2*x)/(4*z+y)
         elif 1 < self.λ*(1-ε):   # Case 2 : Poor
