@@ -34,7 +34,7 @@ mélange de 'N' composants chimiques différents de fraction 'X' dont les param�
 Le fuel defini par defaut est le methane (CH4) sans melange. Le ratio d'air au fuel est defini
 a la stoechiometrie.
 """
-class MixedFuels:
+class MixedFuel:
     def __init__(self, fuel: dict={"CH4": 1.0}, Ts=298.15, Ps=1.01325e5, **kwargs):
         self.Ts = Ts
         self.Ps = Ps
@@ -50,13 +50,7 @@ class MixedFuels:
         self.fuel_frac = np.array(self.fuel_frac)
         self.fuel_frac /= self.fuel_frac.sum()
 
-        ##
-        if 'AF_ratio' in kwargs:
-            self.AF_ratio = kwargs["AF_ratio"]
-        elif 'AFV_ratio' in kwargs:
-            self.AF_ratio = kwargs["AFV_ratio"]  * rho_a/self.rho
-        else:
-            self.AF_ratio = self.AF_stoech
+        self.AF_ratio = self.AF_stoech
 
         ## Reactants Decomposition
         self.rct_id = {ft:i for (i,ft) in enumerate(fuel)}
@@ -82,11 +76,10 @@ class MixedFuels:
                 self.rct_frac[i] = fuel[rid]
 
         ## Products Creation
-        self.pdt_id = {'CO2':0, 'CO':1, 'H2':2, 'H2O':3, 'O2':4, 'N2':5}
+        self.pdt_id = {'CO2':0, 'CO':1, 'H2':2, 'H2O':3, 'O2':4, 'N2':5, 'NO':6}
         self.pdt_n  = len(self.pdt_id)
         self.pdt_chem = [Chemical(pid,Ts,Ps) for pid in self.pdt_id.keys()]
         self.pdt_frac = np.zeros(self.pdt_n)
-        self._update_products()
 
         """
         glob = sum(self.reactant.values())
@@ -222,9 +215,8 @@ class MixedFuels:
     def equivalence_ratio(self):
         return (self.λ)**(-1)
 
-    # 
-    def _update_AFV_ratio(self, AFV_ratio):
-        self.AF_ratio = AFV_ratio * rho_a/self.rho
+    #
+    def _update_reactants(self):
         w,x,y,z = self.get_wxyz()
 
         #self.rct_frac[self.rct_id['O2']] = self.AF_ratio*O2.MW/(O2.MW+3.76*N2.MW)
@@ -237,32 +229,8 @@ class MixedFuels:
         if 'N2' in self.fuel_id:
             self.rct_frac[self.rct_id['N2']] += self.fuel_frac[self.fuel_id['N2']]
 
-        self._update_products()
-
-
-    # Return the flue gases composition, with coefficients in stoechiometry with x, y, z
-    def _update_products(self,ε=0):
-        w,x,y,z = self.get_wxyz()
-
-        if self.λ*(1+ε) < 1:     # Case 1 : Rich
-            k = 2*(1-self.λ)*(4*z+y-2*x)/(4*z+y)
-        elif 1 < self.λ*(1-ε):   # Case 2 : Poor
-            k = 0
-        else:                    # Case 3 : Mixed
-            k = ((1-self.λ*(1-ε))**2)/(2*ε*self.λ) * (4*z+y-2*x)/(4*z+y)
-
-        self.pdt_frac[self.pdt_id['CO2']] = (1-k)*z
-        self.pdt_frac[self.pdt_id['CO']]  = k*z
-        self.pdt_frac[self.pdt_id['H2']]  = k*y/4
-        self.pdt_frac[self.pdt_id['H2O']] = (1-k/2)*y/2
-        self.pdt_frac[self.pdt_id['O2']]  = (self.λ-1)*(z+(y-2*x)/4) + k/2*(z+y/4)
-        self.pdt_frac[self.pdt_id['N2']]  = 3.76*self.λ*(z+(y-2*x)/4) + w/2
-
-    """
-    Return the flue gases composition (sum = 1)
-    """
-    def flue_gas_comp(self,ε=0,dry=False):
-        self._update_products(ε)
+    # Return the flue gases composition (sum = 1)
+    def flue_gas_comp(self, dry=False):
         total = sum(self.pdt_frac)
         if dry:
             total -= self.pdt_frac[self.pdt_id['H2O']]
@@ -272,24 +240,21 @@ class MixedFuels:
                 fgc[pid] = self.pdt_frac[i] / total
         return fgc
 
-    """
-    Return the adiabatic temperature of the combustion
-    """
+    # Return the adiabatic temperature of the combustion
     def T_ad(self, T_in=300):
-        self._update_products()
 
         #"""
         HCGr = self.rct_frac @ np.array(
-            [chem.HeatCapacityGas.T_dependent_property_integral(self.Ts, T_in)/(T_in-self.Ts)
-            for chem in self.rct_chem])
+            [chem.HeatCapacityGas.T_dependent_property_integral(self.Ts, T_in)
+            for chem in self.rct_chem]) / (T_in-self.Ts)
 
         HCGp = lambda Tad: self.pdt_frac @ np.array(
-            [chem.HeatCapacityGas.T_dependent_property_integral(self.Ts, Tad)/(Tad-self.Ts)
-            for chem in self.pdt_chem])
+            [chem.HeatCapacityGas.T_dependent_property_integral(self.Ts, Tad)
+            for chem in self.pdt_chem]) / (Tad-self.Ts)
 
+        # func = lambda Tad: HCGp(Tad) - (self.LHV + HCGr)
         func = lambda Tad: (Tad-self.Ts)*HCGp(Tad) - (self.LHV + (T_in-self.Ts)*HCGr)
-        T_ad = fsolve(func, 1000)[0]
-
+        T_ad = fsolve(func, 500)[0]
         """
         sum_reac = 0
         for (frac,chem) in zip(self.rct_frac,self.rct_chem):

@@ -14,20 +14,25 @@ except:
     use_seaborn = False
 
 from classCombustible import Combustible
-from classMixedFuels import MixedFuels
+from classMixedFuelTheoretical import MixedFuelTheoretical
+from classMixedFuelExperiment import MixedFuelExperiment
+
 from LabResults_donatien import gas_flow_rates, air_flow_rates, T_room, gas_comp as real_gc
-#gas_flow_rates[0] = 2.29
-gas_flow_rate = gas_flow_rates[0]
+gas_flow_rate = gas_flow_rates[0].
 
 
 nfig = 1
+
+#gas_flow_rate = 1.
+Ts = 298.15
+Ps = 1.01325e5
 
 # Power of the gas supply [kW]
 power = 17.5e3
 fuel  = {'CH4': .827, 'C2H6': .039, 'C3H8': .012, 'CO2': .014, 'N2': .108}
 
 # Fuel composition as detailed in the .pdf file
-mxf = MixedFuels(fuel=fuel, Ts=298.15, Ps=1.01325e5) #, AFV_ratio=20./gas_flow_rate)
+mxf = MixedFuelTheoretical(fuel=fuel, Ts=298.15, Ps=1.01325e5) #, AFV_ratio=20./gas_flow_rate)
 
 print("Volumetric Gas flowrate assumption: %.2f [m³/h]" %gas_flow_rate)
 print("The volumetric air flowrate for a stoechiometric combustion: %.2f [m³/h]" %(mxf.AFV_stoech*gas_flow_rate))
@@ -40,19 +45,20 @@ print("     The product-to-fuel ratio at stoechiometry is PFst = %.2f [kg(gas)/k
 
 print("=========== 2 ===========") 
 print(mxf.pdt_id)
-for i in range(3):
-    afr = air_flow_rates[i]
+for (i,afr) in enumerate(air_flow_rates):
     # Re-set fuel compositon to re-create new mxf with new afr
     # fuel  = {'CH4': .827, 'C2H6': .039, 'C3H8': .012, 'CO2': .014, 'N2': .108}
     # mxf = MixedFuels(fuel=fuel, AFV_ratio=afr/gas_flow_rate)
     AFV_ratio = afr/gas_flow_rates[i]
-    mxf._update_AFV_ratio(AFV_ratio)
+
+    mxf._update_AFV_ratio(AFV_ratio,ε=5e-2)
+    mxfe = MixedFuelExperiment(real_gc[i], fuel,Ts,Ps,AFV_ratio=AFV_ratio)
 
     print("  Air flowrate = %.2f" % afr)
     print("    1. The excess-air coefficient λ: %.2f" %mxf.λ)
     print("    2. The flue gas compsition (dry basis):")
     print("       \t\ttheorical \treal")
-    for (comp, val) in mxf.flue_gas_comp(ε=0.1, dry=True).items():
+    for (comp, val) in mxfe.flue_gas_comp(dry=True).items():
         if (comp == 'CO'):
             print("       %s:\t%d ppm   \t%d ppm" %(comp, val*1e6, real_gc[i][comp]))
         elif comp in ['CO2', 'O2']:

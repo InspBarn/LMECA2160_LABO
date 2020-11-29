@@ -50,10 +50,10 @@ for i in range(len(debits)):
     gas_comp.append(gc)
 
     plt.figure()
-    plt.plot(stable_air)
-    #plt.plot(time,results['T201Gb'])
-    #plt.plot(time,results['T202Gb'])
-    #plt.plot(time,results['T203Gb'])
+    #plt.plot(stable_air)
+    plt.plot(time,results['T201Gb'])
+    plt.plot(time,results['T202Gb'])
+    plt.plot(time,results['T203Gb'])
 
 T_room = results['atm temperature'][0]+273.15
 
