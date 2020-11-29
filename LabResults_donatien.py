@@ -6,7 +6,7 @@ import pandas as pd
 
 # Mathematic developments
 import math as mt
-import numpy as np
+#import numpy as np
 
 # Figure and Graphical representation
 from matplotlib import pyplot as plt
@@ -30,7 +30,7 @@ stable_air_time_limits = [[0, 1e5],
                           [0, 55205]]
 gas_comp = []
 air_flow_rates = []
-gas_flow_rate = []
+gas_flow_rates = []
 for i in range(len(debits)):
     results = pd.read_csv('results/d'+str(debits[i])+'_donatien.csv')
     results.columns = columns
@@ -41,8 +41,8 @@ for i in range(len(debits)):
     time = results['hours']*3600 + results['minutes']*60 + results['seconds']
 
     stable_air = results['air flowrate'][(time>stable_air_time_limits[i][0]) & (time<stable_air_time_limits[i][1])]
-    air_flow_rates.append(np.mean(stable_air))
-    gas_flow_rate.extend(list(results['gas flowrate']))
+    air_flow_rates.append(stable_air.mean())
+    gas_flow_rates.append(results['gas flowrate'].mean())
 
     gc = {}
     for g in ['CO', 'CO2', 'NO', 'O2']:
@@ -57,7 +57,7 @@ for i in range(len(debits)):
 
 T_room = results['atm temperature'][0]+273.15
 
-gas_flow_rate = np.mean(gas_flow_rate)
+#gas_flow_rate = np.mean(gas_flow_rate)
 #print(gas_flow_rate)
 #print(air_flow_rates)
 
