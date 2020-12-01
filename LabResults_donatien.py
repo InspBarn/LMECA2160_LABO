@@ -54,6 +54,9 @@ for i in range(len(debits)):
     plt.plot(time,results['T201Gb'])
     plt.plot(time,results['T202Gb'])
     plt.plot(time,results['T203Gb'])
+    print(max(max(results['T201Gb']),
+              max(results['T202Gb']),
+              max(results['T203Gb'])))
 
 T_room = results['atm temperature'][0]+273.15
 

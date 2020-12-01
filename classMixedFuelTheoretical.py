@@ -58,4 +58,20 @@ class MixedFuelTheoretical(MixedFuel):
         self.pdt_frac[self.pdt_id['H2']]  = k*y/4
         self.pdt_frac[self.pdt_id['H2O']] = (1-k/2)*y/2
         self.pdt_frac[self.pdt_id['O2']]  = (self.λ-1)*(z+(y-2*x)/4) + k/2*(z+y/4)
-        self.pdt_frac[self.pdt_id['N2']]  = 3.76*self.λ*(z+(y-2*x)/4) + w/2
+        self.pdt_frac[self.pdt_id['N2']]  = self.rct_frac[self.rct_id['N2']]
+        self.pdt_frac[self.pdt_id['N2']]  =  3.76*self.λ*(z+(y-2*x)/4) + w/2
+
+    def _find_epsilon(self, pdt_CO):
+        it1,it2 = 0.0,0.5
+        err,eps = 1,1e-1
+        n,nmax  = 0,100
+        while (mt.fabs(err)>eps and n<nmax):
+            ε = (it1+it2)/2
+            self._update_products(ε)
+            err = pdt_CO - self.flue_gas_comp(dry=True)['CO']*1e6
+            if err>0:
+                it1 = ε
+            else:
+                it2 = ε
+            n += 1
+        return ε

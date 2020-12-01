@@ -14,7 +14,7 @@ H2O = Chemical('H2O')
 """
 Combustible est un objet représentant un combustible ainsi que sa combustion. Un combustible
 est defini par la formule :
-                                          Cz Hy Ox
+                                    Cz Hy Ox Nw
 Les paramètres sont :
     - w : indice d'azote
     - x : indice d'oxygene

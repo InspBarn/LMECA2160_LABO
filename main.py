@@ -40,8 +40,8 @@ print("The volumetric air flowrate for a stoechiometric combustion: %.2f [m³/h]
 print("=========== 1 ===========") 
 print("  1. The Lower Heating Value (LHV) of the fuel: %.2f [MJ/m³]\n" % (mxf.LHV*mxf.rhom*1E-6))
 # print("The Lower Heating Value (LHV) of the fuel: %.2f [MJ/kg]\n" % (mxf.LHVM*1E-6))
-print("  2. The air-to-fuel ratio at stoechiometry is AFst = %.2f [kg(air)/kg(fuel)]" % mxf.AF_stoech)
-print("     The product-to-fuel ratio at stoechiometry is PFst = %.2f [kg(gas)/kg(fuel)]\n" % mxf.PF_stoech)
+print("  2. Air-to-fuel ratio at stoechiometry is AFst = %.2f [kg(air)/kg(fuel)]" % mxf.AF_stoech)
+print("     Product-to-fuel ratio at stoechiometry is PFst = %.2f [kg(gas)/kg(fuel)]\n" % mxf.PF_stoech)
 
 print("=========== 2 ===========") 
 print(mxf.pdt_id)
@@ -51,21 +51,32 @@ for (i,afr) in enumerate(air_flow_rates):
     # mxf = MixedFuels(fuel=fuel, AFV_ratio=afr/gas_flow_rate)
     AFV_ratio = afr/gas_flow_rates[i]
 
-    mxf._update_AFV_ratio(AFV_ratio,ε=5e-2)
+    mxf._update_AFV_ratio(AFV_ratio) #,ε=5e-2)
     mxfe = MixedFuelExperiment(real_gc[i], fuel,Ts,Ps, AFV_ratio=AFV_ratio)
 
     print("  Air flowrate = %.2f" % afr)
-    print("    1. The excess-air coefficient λ: %.2f" %mxf.λ)
+    print("    1. The excess-air coefficient λ: %.3f" %mxf.λ)
     print("    2. The flue gas compsition (dry basis):")
     print("       \t\ttheorical \treal")
-    for (comp, val) in mxfe.flue_gas_comp(dry=True).items():
+    for (comp, val) in mxf.flue_gas_comp(dry=True).items():
         if comp in ['CO', 'NO']:
             print("       %s:\t%d ppm   \t%d ppm" %(comp, val*1e6, real_gc[i][comp]))
         elif comp in ['CO2', 'O2']:
             print("       %s:\t%.2f %%\t\t%.2f %%" %(comp, val*100, real_gc[i][comp]))
         else:
             print("       %s:\t%.2f %%" %(comp, val*100))
-    print("    3. Adiabatic combustion temperature: T_ad = %.2f" %mxf.T_ad(T_in=T_room))
+    print("    3. Adiabatic combustion temperature: T_ad = %.2f" %(mxf.T_ad(T_in=T_room)-273.15))
+    print("    3. Experienced adiabatic combustion temperature: T_ad = %.2f" %(mxfe.T_ad(T_in=T_room)-273.15))
+
+    # ε = mxf._find_epsilon(mxfe.flue_gas_comp(dry=True)['CO']*1e6)
+    ε = mxf._find_epsilon(real_gc[i]['CO'])
+    mxf._update_AFV_ratio(AFV_ratio, ε=0)
+    print(ε)
+    for (comp, val) in mxf.flue_gas_comp(dry=True).items():
+        if comp in ['CO', 'NO']:
+            print("       %s:\t%d ppm   \t%d ppm" %(comp, val*1e6, mxfe.flue_gas_comp(dry=True)[comp]*1e6))
+        else: #if comp in ['CO2', 'O2']:
+            print("       %s:\t%.2f %%\t\t%.2f %%" %(comp, val*100, mxfe.flue_gas_comp(dry=True)[comp]*1e2))
 
     #[print("%s:\t%.4f\n" % (chem.formula, frac)) for (chem, frac) in zip(mxf.rct_chem,mxf.rct_frac)]
     #[print("%s:\t%.4f\n" % (chem.formula, frac)) for (chem, frac) in zip(mxf.pdt_chem,mxf.pdt_frac)]

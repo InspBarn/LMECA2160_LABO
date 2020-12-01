@@ -76,7 +76,7 @@ class MixedFuel:
                 self.rct_frac[i] = fuel[rid]
 
         ## Products Creation
-        self.pdt_id = {'CO2':0, 'CO':1, 'H2':2, 'H2O':3, 'O2':4, 'N2':5, 'NO':6}
+        self.pdt_id = {'CO2':0, 'CO':1, 'H2':2, 'H2O':3, 'O2':4, 'N2':5}
         self.pdt_n  = len(self.pdt_id)
         self.pdt_chem = [Chemical(pid,Ts,Ps) for pid in self.pdt_id.keys()]
         self.pdt_frac = np.zeros(self.pdt_n)
@@ -91,6 +91,7 @@ class MixedFuel:
             self.product[chem] = comp / glob
         """
 
+    #
     def get_wxyz(self):
         w,x,y,z = 0,0,0,0
         for (ftype, ffraction) in zip(self.fuel_type, self.fuel_frac):
