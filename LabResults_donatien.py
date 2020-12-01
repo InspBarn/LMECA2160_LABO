@@ -11,6 +11,8 @@ import math as mt
 # Figure and Graphical representation
 from matplotlib import pyplot as plt
 
+disp = False
+
 columns = ['hours', 'minutes', 'seconds',
            'atm pressure', 'atm temperature', 'atm humidity',
            'T108AP', 'T200Gb', 'T201Gb', 'T202Gb', 'T203Gb',
@@ -24,7 +26,6 @@ debits = [20, 24, 28]
 We first read the file in which results have been saved and save it into a pandas
 DataFrame structure.
 """
-#stable_air_time_limits = [57836, 56950, 57340]
 stable_air_time_limits = [[0, 1e5],
                           [0, 55509],
                           [0, 55205]]
@@ -49,21 +50,20 @@ for i in range(len(debits)):
         gc[g] = results[g][100]
     gas_comp.append(gc)
 
-    plt.figure()
-    #plt.plot(stable_air)
-    plt.plot(time,results['T201Gb'])
-    plt.plot(time,results['T202Gb'])
-    plt.plot(time,results['T203Gb'])
+    if disp:
+        plt.figure()
+        #plt.plot(stable_air)
+        plt.plot(time,results['T201Gb'])
+        plt.plot(time,results['T202Gb'])
+        plt.plot(time,results['T203Gb'])
+
     print(max(max(results['T201Gb']),
               max(results['T202Gb']),
               max(results['T203Gb'])))
 
 T_room = results['atm temperature'][0]+273.15
 
-#gas_flow_rate = np.mean(gas_flow_rate)
-#print(gas_flow_rate)
-#print(air_flow_rates)
-
 if __name__=="__main__":
-  plt.show()
-  print(gas_comp)
+    if disp:
+        plt.show()
+    print(gas_comp)
