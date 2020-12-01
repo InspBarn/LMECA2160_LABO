@@ -12,6 +12,8 @@ import math as mt
 from matplotlib import pyplot as plt
 
 disp = False
+if __name__=="__main__":
+    disp = True
 
 columns = ['hours', 'minutes', 'seconds',
            'atm pressure', 'atm temperature', 'atm humidity',
@@ -63,3 +65,4 @@ if __name__=="__main__":
     if disp:
         plt.show()
     print(gas_comp)
+    print(results['atm pressure'][100])
